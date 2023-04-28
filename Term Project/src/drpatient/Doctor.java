@@ -19,12 +19,8 @@ public class Doctor {
    
     @Override
     public String toString() {
-		//
-		//
-		// add patietn list?
-		//
-		//
-	return lastName + ", " + firstName + ": " + id + "\n";
+		String patientString = "\nPatients: " + this.patientList.toString();
+		return lastName + ", " + firstName + ": " + id + patientString + "\n";
     }
     
     // properties
@@ -47,7 +43,15 @@ public class Doctor {
 		return this.patientList;
 	}
 	public void setPatientList(List<Patient> patientList){
-		this.patientList = patientList;
+		if (this.patientList == null ){
+				for (Patient p : patientList){
+					if( p.getDoctorId == this.id){
+						patientList.add(p);
+					}
+				}
+		} else {
+			this.patientList = patientList;
+		}
 	}
 	
 }
