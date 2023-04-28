@@ -1,0 +1,45 @@
+curl localhost:8080/drpatient/resources/
+curl localhost:8080/drpatient/resources/xml
+curl localhost:8080/drpatient/resources/plain
+
+
+curl --request POST --data "firstName=Super&lastName=doctory" localhost:8080/drpatient/resources/create/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--------------------------
+
+curl localhost:8080/predictions2?id=31
+
+curl --header "Accept: application/json" localhost:8080/predictions2/
+
+curl --header "Accept: application/json" localhost:8080/predictions2?id=31
+
+
+curl localhost:8080/predictions2/
+
+curl --request PUT --data "id=33#what=This is an update" localhost:8080/predictions2/
+
+curl localhost:8080/predictions2/
+
+curl --request DELETE localhost:8080/predictions2?id=33
+
+curl localhost:8080/predictions2/
+
+
+curl --request PUT --data "id=6#ranking=5" http://localhost:8080/rankings2/
+
