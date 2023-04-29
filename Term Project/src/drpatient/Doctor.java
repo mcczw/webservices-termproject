@@ -3,6 +3,7 @@ package drpatient;
 //class to store doctor
 //which contains a list of patients
 
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlElement;
 import java.util.List;
@@ -14,13 +15,19 @@ public class Doctor {
     protected List<Patient> patientList;
 	protected int id;
     
-    public Doctor() { }
+    public Doctor() {
+		patientList = new CopyOnWriteArrayList<Patient>();
+	}
 
    
     @Override
     public String toString() {
-		String patientString = "\nPatients: " + this.patientList.toString();
-		return lastName + ", " + firstName + ": " + id + patientString + "\n";
+		String patientString = "";
+		if (patientList != null) {
+			for (Patient p : patientList)
+			patientString += p;
+		}
+		return lastName + ", " + firstName + ": " + id + "\n Patients:\n " +  patientString + "\n";
     }
     
     // properties
@@ -43,15 +50,16 @@ public class Doctor {
 		return this.patientList;
 	}
 	public void setPatientList(List<Patient> patientList){
-		if (this.patientList == null ){
-				for (Patient p : patientList){
-					if( p.getDoctorId == this.id){
-						patientList.add(p);
-					}
-				}
-		} else {
-			this.patientList = patientList;
+		
+		for (Patient p : patientList){
+			if( p.getDoctorId() == this.id){
+				this.patientList.add(p);
+			}
 		}
 	}
+	
+				
+		
+	
 	
 }

@@ -22,7 +22,8 @@ public class Patient {
     // overrides
     @Override
     public String toString() {
-	return id + "- "+ lastName + ", " + firstName + ": " + insuranceNumber + "\n";
+	return  id + "- "+ lastName + ", " + firstName + ": " + insuranceNumber 
+		+ " -- Doctor Id: " + doctorId + "\n";
     }
     
     // properties
@@ -40,8 +41,8 @@ public class Patient {
     public void setInsuranceNumber(String insuranceNumber) { this.insuranceNumber = insuranceNumber;}
 	
 	@XmlElement
-	public String getDoctorId(){ return this.doctorId; }
-	public void setDoctorId(String doctorId){ this.doctorId = doctorId; }
+	public int getDoctorId(){ return this.doctorId; }
+	public void setDoctorId(int doctorId){ this.doctorId = doctorId; }
 	
 	@XmlElement
     public int getId() { return this.id; }

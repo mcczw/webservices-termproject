@@ -17,6 +17,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Context;
 import javax.servlet.ServletContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 
 @Path("/")
 public class DrPatientRS {
@@ -41,7 +43,7 @@ public class DrPatientRS {
 	@GET
     @Path("/xml/p")
     @Produces({MediaType.APPLICATION_XML}) 
-    public Response getXml() {
+    public Response getXmlP() {
 		checkContext();
 		return Response.ok(patientList, "application/xml").build();
     }
@@ -58,7 +60,7 @@ public class DrPatientRS {
 	@GET
     @Path("/xml/p/{id: \\d+}")
     @Produces({MediaType.APPLICATION_XML}) 
-    public Response getXml(@PathParam("id") int id) {
+    public Response getXmlP(@PathParam("id") int id) {
 		checkContext();
 		return toRequestedTypeP(id, "application/xml");
     }
@@ -78,14 +80,21 @@ public class DrPatientRS {
 		checkContext();
 		return toRequestedType(id, "application/json");
     }
-
+/*
 	@GET
 	@Path("")
 	@Produces({MediaType.TEXT_PLAIN})
 	public String getNone() {
 		checkContext();
-		return staff.toString();
-		
+		return staff.toString();	
+	} */
+	
+	@GET
+	@Path("p")
+	@Produces({MediaType.TEXT_PLAIN})
+	public String getPlainp(){
+		checkContext();
+		return patientList.toString();
 	}
 	
     @GET
@@ -113,7 +122,7 @@ public class DrPatientRS {
 		                                   build();
 		}	    
 	
-		int id = addDoctor(firstName, lastName);
+		int id = staff.add(firstName, lastName);
 		msg = "Doctor " + id + " created: (" + firstName + " " + lastName + ").\n";
 		return Response.ok(msg, "text/plain").build();
     }
@@ -124,7 +133,8 @@ public class DrPatientRS {
     @Path("/createp")
     public Response create(@FormParam("firstName") String firstName, 
 			   @FormParam("lastName") String lastName,
-			   @FormParam("insuranceNumber") String insuranceNumber {
+			   @FormParam("insuranceNumber") String insuranceNumber,
+			   @FormParam("doctorId") int doctorId) {
 		checkContext();
 		String msg = null;
 		// Require both properties to create.
@@ -134,11 +144,16 @@ public class DrPatientRS {
 		                                   entity(msg).
 		                                   type(MediaType.TEXT_PLAIN).
 		                                   build();
-		}	    
-	
-		int id = addPatient(firstName, lastName, insuranceNumber);
+		}
+		int id = 0;	    
+		if (doctorId != 0) {
+			id = addPatient(firstName, lastName, insuranceNumber, doctorId);
+		} else {
+			id = addPatient(firstName, lastName, insuranceNumber, 0);
+		}
 		msg = "Patient " + id + " created: (" + firstName + " " + lastName + 
 				"Insurance #: " + insuranceNumber + ").\n";
+		rebuildPatientList();
 		return Response.ok(msg, "text/plain").build();
     }
 
@@ -182,15 +197,18 @@ public class DrPatientRS {
     public Response update(@FormParam("id") int id,
 			   @FormParam("firstName") String firstName, 
 			   @FormParam("lastName") String lastName,
-			   @FormParam("insuranceNumber" String insuranceNumber) {
+			   @FormParam("insuranceNumber") String insuranceNumber,
+			   @FormParam("doctorId") int doctorId) {
 		checkContext();
 
 		// Check that sufficient data are present to do an edit.
 		String msg = null;
-		if (firstName == null && lastName == null && insuranceNumber == null) 
-			msg = "Neither first name, last name, or insurance number is given: nothing to edit.\n";
-
 		Patient p = patientList.find(id);
+		
+		if (firstName == null && lastName == null && insuranceNumber == null && doctorId == p.getDoctorId()) 
+			msg = "Neither first name, last name, docId, or insurance number is given: nothing to edit.\n";
+
+		
 		if (p == null)
 			msg = "There is no patient with ID " + id + "\n";
 
@@ -203,7 +221,9 @@ public class DrPatientRS {
 		if (firstName != null) p.setFirstName(firstName);
 		if (lastName != null) p.setLastName(lastName);
 		if (insuranceNumber != null) p.setInsuranceNumber(insuranceNumber);
-		msg = "Patient " + id + " has been updated.\n";
+		if (doctorId != p.getDoctorId()) p.setDoctorId(doctorId);
+		msg = "Patient " + id + " has been updated.\n" + patientList.find(id);
+		rebuildPatientList();
 		return Response.ok(msg, "text/plain").build();
     }
 
@@ -232,7 +252,7 @@ public class DrPatientRS {
     @DELETE
     @Produces({MediaType.TEXT_PLAIN})
     @Path("/deletep/{id: \\d+}")
-    public Response delete(@PathParam("id") int id) {
+    public Response deleteP(@PathParam("id") int id) {
 		checkContext();
 		String msg = null;
 		Patient p = patientList.find(id);
@@ -244,91 +264,87 @@ public class DrPatientRS {
 		                                   build();
 		}
 		//access the list to use built in list remove()
-		patientList.getPatients().remove(d);
+		patientList.getPatients().remove(p);
 		msg = "Doctor " + id + " deleted.\n";
+		rebuildPatientList();
 
 		return Response.ok(msg, "text/plain").build();
     }
 
     //** utilities
     private void checkContext() {
-	if (staff == null || patientList == null) populate();
+		if (staff == null || patientList == null) populate();
+		
     }
 
     private void populate() {
-		if ( patientList == null ) {
+		
+		if ( patientList == null ) {	
 			patientList = new PatientList();
 			String filenamePatient = "/WEB-INF/data/patients.db";
-			InputStream in = sctx.getResourceAsStream(firenamePatient);
-			
+			InputStream in = sctx.getResourceAsStream(filenamePatient);
 			// Load Patient data		
 			if (in != null){
 				try {
 					BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-					int i = 0;
+					
 					String record = null;
-					while ((record = read.readLine()) != null){
+					while ((record = reader.readLine()) != null){
 						String[] parts = record.split("!");
-						addPatient(parts[0], parts[1], parts[2]);
+						int i = Integer.valueOf(parts[3]);
+						addPatient(parts[0], parts[1], parts[2], i);
 					}
 				} catch (Exception e){
 					throw new RuntimeException("I/O failed: Patient data loading");
 				}
 			}
-			
-		}
-		
+		}	
+				
 		if ( staff == null ){
 			staff = new Staff();
 			String filenameDr = "/WEB-INF/data/drs.db";
 			InputStream in = sctx.getResourceAsStream(filenameDr);
+				
+				List<Patient> listp = patientList.getPatients();
 			
 			if (in != null) {
 				try {
 					BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-					int i = 0;
 					int docId = 0;
 					String record = null;
 					while ((record = reader.readLine()) != null) {
 						String[] parts = record.split("!");
-						docId = addDoctor(parts[0], parts[1]);
+						docId = staff.add(parts[0], parts[1]);
 						// finds patients with associated docId and adds them to that 
 						// doctor's patientList
-						addDoctorsPatients(staff, docId, patientList);
+						staff.find(docId).setPatientList(listp);
+						System.out.println("after");
 					}
 				} catch (Exception e) { 
 					throw new RuntimeException("I/O failed: Doctor data loading"); 
 				}
 			}	
-		}
-		
-		
-		
+		}		
     } 
 
-    // Add a new Doctor
-    private int addDoctor(String firstName, String lastName) {
-		int id = staff.add(firstName, lastName);
-		return id;
-    }
 	
-	private void addDoctorsPatients(Staff dList, int doctorId, PatientList patientList){
-		doctor = dList.find(doctorId);
-		
-		if ( doctor.getPatientList() == null ){
-			List<Patient> assignedPatients = new List<Patient>();
-			for (Patient p : patientList) {
-				if (p.getDoctorId() == doctorId ){
-					assignedPatients.add(p);
-				}
-			}
-			doctor.setPatientList(assignedPatients);
-		}
+	private int addPatient(String firstName, String lastName, String insuranceNum, int docNum){
+		int id = patientList.add(firstName, lastName, insuranceNum, docNum);
+		return id;
 	}
 	
-	private addPatient(String firstName, String lastName, String insuranceNum){
-		int id = patientList.add(firstName, lastName, insuranceNum);
-		return id;
+	private void rebuildPatientList(){
+		List<Patient> listp = patientList.getPatients();
+		
+		for (Doctor d : staff.getDoctors()){
+			List<Patient> listNew = new CopyOnWriteArrayList<Patient>();
+			for (Patient p : listp){
+				if (p.getDoctorId() == d.getId() && ! d.getPatientList().contains(p))
+					listNew.add(p);
+			}
+			d.setPatientList(listNew);
+		}
+		
 	}
 
     // Prediction --> JSON document
@@ -387,18 +403,18 @@ public class DrPatientRS {
     }
 	
 	private Response toRequestedTypeP(int id, String type) {
-	Patient patient = patientList.find(id);
-	if (patient == null) {
-	    String msg = id + " is a bad ID.\n";
-	    return Response.status(Response.Status.BAD_REQUEST).
+		Patient patient = patientList.find(id);
+		if (patient == null) {
+			String msg = id + " is a bad ID.\n";
+			return Response.status(Response.Status.BAD_REQUEST).
 		                                   entity(msg).
 		                                   type(MediaType.TEXT_PLAIN).
 		                                   build();
-	}
-	else if (type.contains("json"))
-	    return Response.ok(toJson(patient), type).build();
-	else
-	    return Response.ok(patient, type).build(); // toXml is automatic
+		}	
+		else if (type.contains("json"))
+			return Response.ok(toJson(patient), type).build();
+		else
+			return Response.ok(patient, type).build(); // toXml is automatic
     }
 }
 

@@ -38,7 +38,7 @@ public class Staff {
 	
 		for (Doctor d : doctors) {
 			if (d.getId() == id) {
-			doctor = d;
+				doctor = d;
 			break;
 			}
 		}	

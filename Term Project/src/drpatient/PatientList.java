@@ -7,12 +7,12 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper; 
 import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name = "patients")
+@XmlRootElement(name = "patientList")
 public class PatientList {
     private List<Patient> patients; 
     private AtomicInteger patientId;
 
-    public Staff() { 
+    public PatientList() { 
 		patients = new CopyOnWriteArrayList<Patient>(); 
 		patientId = new AtomicInteger();
     }
@@ -46,16 +46,23 @@ public class PatientList {
 		return patient;
     }
 
-    public int add(String firstName, String lastName, String insuranceNum) {
+    public int add(String firstName, String lastName, String insuranceNum, int docNum) {
 	int id = patientId.incrementAndGet();
 	Patient p = new Patient();
 	p.setFirstName(firstName);
 	p.setLastName(lastName);
 	p.setInsuranceNumber(insuranceNum);
 	p.setId(id);
+	p.setDoctorId(docNum);
 	patients.add(p);
 	return id;
     }
+	
+	public int add(Patient p){
+		int id = patientId.incrementAndGet();
+		patients.add(p);
+		return id;
+	}
 	
 	
 }
