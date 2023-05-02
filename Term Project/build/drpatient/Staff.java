@@ -13,44 +13,45 @@ public class Staff {
     private AtomicInteger doctorId;
 
     public Staff() { 
-	doctors = new CopyOnWriteArrayList<Doctor>(); 
-	doctorId = new AtomicInteger();
+		doctors = new CopyOnWriteArrayList<Doctor>(); 
+		doctorId = new AtomicInteger();
     }
 
     @XmlElement 
     @XmlElementWrapper(name = "doctors") 
     public List<Doctor> getDoctors() { 
-	return this.doctors;
+		return this.doctors;
     } 
     public void setDoctors(List<Doctor> doctors) { 
-	this.doctors = doctors;
+		this.doctors = doctors;
     }
 
     @Override
     public String toString() {
-	String s = "";
-	for (Doctor d : doctors) s += d.toString();
-	return s;
+		String s = "";
+		for (Doctor d : doctors) s += d.toString();
+		return s;
     }
 
     public Doctor find(int id) {
-	Doctor doctor = null;
+		Doctor doctor = null;
 	
-	for (Doctor d : doctors) {
-	    if (d.getId() == id) {
-		doctor = d;
-		break;
-	    }
-	}	
-	return doctor;
+		for (Doctor d : doctors) {
+			if (d.getId() == id) {
+				doctor = d;
+			break;
+			}
+		}	
+		return doctor;
     }
+
     public int add(String firstName, String lastName) {
-	int id = doctorId.incrementAndGet();
-	Doctor d = new Doctor();
-	d.setFirstName(firstName);
-	d.setLastName(lastName);
-	d.setId(id);
-	doctors.add(d);
-	return id;
+		int id = doctorId.incrementAndGet();
+		Doctor d = new Doctor();
+		d.setFirstName(firstName);
+		d.setLastName(lastName);
+		d.setId(id);
+		doctors.add(d);
+		return id;
     }
 }

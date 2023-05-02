@@ -14,9 +14,6 @@ public class Patient {
 	protected int doctorId = 0;
 	protected int id;
     
-	//might need to change patient id to pId or something to avoid
-	// conflict in the xml/id call
-	
     public Patient() { }
 
     // overrides

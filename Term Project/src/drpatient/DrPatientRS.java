@@ -25,12 +25,12 @@ public class DrPatientRS {
     @Context 
     private ServletContext sctx;          	// dependency injection
     private static Staff staff; 			// set in populate()  
-	private static PatientList patientList; //set in populate()
+	private static PatientList patientList; // set in populate()
 
     public DrPatientRS() { }
 	
 	// GETs will return doctor & patient data by default
-	//to get only patient data use additional /p/
+	//to get only patient data denoted by additional 'p'
 
     @GET
     @Path("/xml")
@@ -47,7 +47,8 @@ public class DrPatientRS {
 		checkContext();
 		return Response.ok(patientList, "application/xml").build();
     }
-
+	
+	
     @GET
     @Path("/xml/{id: \\d+}")
     @Produces({MediaType.APPLICATION_XML}) 
@@ -80,14 +81,26 @@ public class DrPatientRS {
 		checkContext();
 		return toRequestedType(id, "application/json");
     }
-/*
+
 	@GET
 	@Path("")
 	@Produces({MediaType.TEXT_PLAIN})
 	public String getNone() {
 		checkContext();
 		return staff.toString();	
-	} */
+	} 
+	
+	@GET
+	@Path("/doctors")
+	@Produces({MediaType.TEXT_PLAIN})
+	public String getAllDocs(){
+		checkContext();	
+		String s = "";
+		for (Doctor d : staff.getDoctors()){
+			s += d.noPatientsString();
+		}	
+		return s;		
+	}
 	
 	@GET
 	@Path("p")
@@ -97,12 +110,28 @@ public class DrPatientRS {
 		return patientList.toString();
 	}
 	
+	@GET
+	@Path("/plain/p/{id: \\d+}")
+    @Produces({MediaType.TEXT_PLAIN}) 
+	public String getPlainp(@PathParam("id") int id) {
+		checkContext();
+		return patientList.find(id).toString();
+    }
+	
     @GET
 	@Path("/plain")
     @Produces({MediaType.TEXT_PLAIN}) 
 	public String getPlain() {
 		checkContext();
 		return staff.toString();
+    }
+	
+	@GET
+	@Path("/plain/{id: \\d+}")
+    @Produces({MediaType.TEXT_PLAIN}) 
+	public String getPlain(@PathParam("id") int id) {
+		checkContext();
+		return staff.find(id).toString();
     }
 
 	// POST doctor
@@ -137,7 +166,7 @@ public class DrPatientRS {
 			   @FormParam("doctorId") int doctorId) {
 		checkContext();
 		String msg = null;
-		// Require both properties to create.
+		// Require all properties to create.
 		if (firstName == null || lastName == null || insuranceNumber == null) {
 			msg = "Property 'firstName', 'lastName', or 'insuranceNumber' is missing.\n";
 			return Response.status(Response.Status.BAD_REQUEST).
@@ -145,20 +174,35 @@ public class DrPatientRS {
 		                                   type(MediaType.TEXT_PLAIN).
 		                                   build();
 		}
-		int id = 0;	    
+		Patient patient;  
+		
+		
+		
 		if (doctorId != 0) {
-			id = addPatient(firstName, lastName, insuranceNumber, doctorId);
+			Doctor d = staff.find(doctorId);
+			if (d == null)
+				msg = "There is no doctor with ID " + doctorId + "\n";
+			if (msg != null)
+				return Response.status(Response.Status.BAD_REQUEST).
+		                                   entity(msg).
+		                                   type(MediaType.TEXT_PLAIN).
+		                                   build();
+			
+			patient = addPatient(firstName, lastName, insuranceNumber, doctorId);
 		} else {
-			id = addPatient(firstName, lastName, insuranceNumber, 0);
+			patient = addPatient(firstName, lastName, insuranceNumber, 0);
 		}
-		msg = "Patient " + id + " created: (" + firstName + " " + lastName + 
-				"Insurance #: " + insuranceNumber + ").\n";
-		rebuildPatientList();
+		
+		msg = "Patient " + patient.getId() + " created: (" + firstName + " " + lastName + 
+				" Insurance #: " + insuranceNumber + ").\n";
+				
+		if (doctorId != 0) {
+			Doctor doctor = staff.find(doctorId);
+			doctor.getPatientList().add(patient);
+		}
+		
 		return Response.ok(msg, "text/plain").build();
     }
-
-
-
 
 	//PUT doctor
     @PUT
@@ -177,7 +221,7 @@ public class DrPatientRS {
 		Doctor d = staff.find(id);
 		if (d == null)
 			msg = "There is no doctor with ID " + id + "\n";
-
+	
 		if (msg != null)
 			return Response.status(Response.Status.BAD_REQUEST).
 		                                   entity(msg).
@@ -211,19 +255,39 @@ public class DrPatientRS {
 		
 		if (p == null)
 			msg = "There is no patient with ID " + id + "\n";
+		Doctor d = staff.find(doctorId);
+		if (d == null)
+			msg = "There is no doctor with ID " + doctorId + "\n";
+						
 
 		if (msg != null)
 			return Response.status(Response.Status.BAD_REQUEST).
 		                                   entity(msg).
 		                                   type(MediaType.TEXT_PLAIN).
 		                                   build();
-		// Update.
+		// Update any of the provided fields.
 		if (firstName != null) p.setFirstName(firstName);
 		if (lastName != null) p.setLastName(lastName);
 		if (insuranceNumber != null) p.setInsuranceNumber(insuranceNumber);
-		if (doctorId != p.getDoctorId()) p.setDoctorId(doctorId);
+		
+		
+		int oldDoctorId = p.getDoctorId();
+		if (doctorId != oldDoctorId) {
+			p.setDoctorId(doctorId);
+			
+			// Remove patient from the oldDoctor's patientList
+			if (oldDoctorId != 0) {
+				Doctor oldDoctor = staff.find(oldDoctorId);
+				oldDoctor.getPatientList().remove(p);			
+			}
+			// Add patient to the newDoctor's patientList
+			if (doctorId != 0) {
+				Doctor newDoctor = staff.find(doctorId);
+				newDoctor.getPatientList().add(p);		
+			}
+		}
 		msg = "Patient " + id + " has been updated.\n" + patientList.find(id);
-		rebuildPatientList();
+	
 		return Response.ok(msg, "text/plain").build();
     }
 
@@ -241,6 +305,37 @@ public class DrPatientRS {
 		                                   entity(msg).
 		                                   type(MediaType.TEXT_PLAIN).
 		                                   build();
+		}
+		for (Patient p : patientList.getPatients()){
+			if (p.getDoctorId() == id){
+				p.setDoctorId(0);
+			}
+		}
+		
+		staff.getDoctors().remove(d);
+		msg = "Doctor " + id + " deleted.\n";
+
+		return Response.ok(msg, "text/plain").build();
+    }
+	
+	@DELETE
+    @Produces({MediaType.TEXT_PLAIN})
+    @Path("/deleteAll/{id: \\d+}")
+    public Response deleteAll(@PathParam("id") int id) {
+		checkContext();
+		String msg = null;
+		Doctor d = staff.find(id);
+		if (d == null) {
+			msg = "There is no doctor with ID " + id + ". Cannot delete.\n";
+			return Response.status(Response.Status.BAD_REQUEST).
+		                                   entity(msg).
+		                                   type(MediaType.TEXT_PLAIN).
+		                                   build();
+		}
+		for (Patient p : patientList.getPatients()){
+			if (p.getDoctorId() == id){
+				patientList.getPatients().remove(p);
+			}
 		}
 		staff.getDoctors().remove(d);
 		msg = "Doctor " + id + " deleted.\n";
@@ -263,10 +358,11 @@ public class DrPatientRS {
 		                                   type(MediaType.TEXT_PLAIN).
 		                                   build();
 		}
-		//access the list to use built in list remove()
+
+		Doctor doctor = staff.find(p.getDoctorId());
+		doctor.getPatientList().remove(p);
 		patientList.getPatients().remove(p);
-		msg = "Doctor " + id + " deleted.\n";
-		rebuildPatientList();
+		msg = "Patient " + id + " deleted.\n";
 
 		return Response.ok(msg, "text/plain").build();
     }
@@ -304,21 +400,22 @@ public class DrPatientRS {
 			staff = new Staff();
 			String filenameDr = "/WEB-INF/data/drs.db";
 			InputStream in = sctx.getResourceAsStream(filenameDr);
-				
-				List<Patient> listp = patientList.getPatients();
-			
+			List<Patient> listp = patientList.getPatients();
+			// Load Doctor data	
 			if (in != null) {
 				try {
 					BufferedReader reader = new BufferedReader(new InputStreamReader(in));
 					int docId = 0;
 					String record = null;
 					while ((record = reader.readLine()) != null) {
+						
 						String[] parts = record.split("!");
 						docId = staff.add(parts[0], parts[1]);
-						// finds patients with associated docId and adds them to that 
-						// doctor's patientList
+						
+						// passes the patientList to the current doctor 
+						// method adds those w/ matching doctorId only
 						staff.find(docId).setPatientList(listp);
-						System.out.println("after");
+						
 					}
 				} catch (Exception e) { 
 					throw new RuntimeException("I/O failed: Doctor data loading"); 
@@ -328,26 +425,11 @@ public class DrPatientRS {
     } 
 
 	
-	private int addPatient(String firstName, String lastName, String insuranceNum, int docNum){
+	private Patient addPatient(String firstName, String lastName, String insuranceNum, int docNum){
 		int id = patientList.add(firstName, lastName, insuranceNum, docNum);
-		return id;
+		return patientList.find(id);
 	}
 	
-	private void rebuildPatientList(){
-		List<Patient> listp = patientList.getPatients();
-		
-		for (Doctor d : staff.getDoctors()){
-			List<Patient> listNew = new CopyOnWriteArrayList<Patient>();
-			for (Patient p : listp){
-				if (p.getDoctorId() == d.getId() && ! d.getPatientList().contains(p))
-					listNew.add(p);
-			}
-			d.setPatientList(listNew);
-		}
-		
-	}
-
-    // Prediction --> JSON document
     private String toJson(Doctor doctor) {
 		String json = "If you see this, there's a problem.";
 		try {

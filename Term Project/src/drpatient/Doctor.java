@@ -19,7 +19,6 @@ public class Doctor {
 		patientList = new CopyOnWriteArrayList<Patient>();
 	}
 
-   
     @Override
     public String toString() {
 		String patientString = "";
@@ -30,17 +29,18 @@ public class Doctor {
 		return lastName + ", " + firstName + ": " + id + "\n Patients:\n " +  patientString + "\n";
     }
     
-    // properties
+	public String noPatientsString(){
+		return lastName + ", " + firstName + ": " + id + "\n";
+	}
+	
 	@XmlElement
 	public String getFirstName(){ return this.firstName; }
 	public void setFirstName(String firstName){ this.firstName = firstName; }
-
 	
 	@XmlElement
 	public String getLastName(){ return this.lastName; }
 	public void setLastName(String lastName){ this.lastName = lastName; }
 	
-
 	@XmlElement
     public int getId() { return this.id; }
     public void setId(int id) { this.id=id;}
@@ -50,16 +50,10 @@ public class Doctor {
 		return this.patientList;
 	}
 	public void setPatientList(List<Patient> patientList){
-		
 		for (Patient p : patientList){
 			if( p.getDoctorId() == this.id){
 				this.patientList.add(p);
 			}
 		}
-	}
-	
-				
-		
-	
-	
+	}				
 }

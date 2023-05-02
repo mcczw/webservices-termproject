@@ -1,45 +1,43 @@
+
+Base:
 curl localhost:8080/drpatient/resources/
+
+Defaults to listing doctors (xml & plain):
 curl localhost:8080/drpatient/resources/xml
 curl localhost:8080/drpatient/resources/plain
 
+List only patients:
+curl localhost:8080/drpatient/resources/p
+curl localhost:8080/drpatient/resources/xml/p
 
-curl --request POST --data "firstName=Super&lastName=doctory" localhost:8080/drpatient/resources/create/
+List individual doctor by ID (xml & plain):
+curl --request GET localhost:8080/drpatient/resources/xml/2
+curl --request GET localhost:8080/drpatient/resources/plain/2
 
+List individual patient by ID (xml & plain):
+curl --request GET localhost:8080/drpatient/resources/xml/p/2
+curl --request GET localhost:8080/drpatient/resources/plain/p/2
 
+Add/create new doctor and add patients
+curl --request POST --data "firstName=Gee&lastName=Pea" localhost:8080/drpatient/resources/create/
+curl --request POST --data "firstName=Hai&lastName=Bludpresshar&insuranceNumber=XX698&doctorId=4" 
+	localhost:8080/drpatient/resources/createp/
+curl --request POST --data "firstName=Hypoh&lastName=Kondriak&insuranceNumber=XX698&doctorId=4" 
+	localhost:8080/drpatient/resources/createp/
 
+Update doctor's name on existing list (give id and new name):
+curl --request PUT --data "id=1&firstName=Peety" localhost:8080/drpatient/resources/update/
 
+Delete existing doctor without deleting patients on master list:
+curl --request DELETE localhost:8080/drpatient/resources/delete/2
 
+Delete a patient:
+curl --request DELETE localhost:8080/drpatient/resources/deletep/7
 
+Delete existing doctor AND all patients on master list:
+curl --request DELETE localhost:8080/drpatient/resources/deleteAll/3
 
+Update a patient to a different doctor:
+curl --request PUT --data "id=5&doctorId=2" localhost:8080/drpatient/resources/updatep/
 
-
-
-
-
-
-
-
-
-
---------------------------
-
-curl localhost:8080/predictions2?id=31
-
-curl --header "Accept: application/json" localhost:8080/predictions2/
-
-curl --header "Accept: application/json" localhost:8080/predictions2?id=31
-
-
-curl localhost:8080/predictions2/
-
-curl --request PUT --data "id=33#what=This is an update" localhost:8080/predictions2/
-
-curl localhost:8080/predictions2/
-
-curl --request DELETE localhost:8080/predictions2?id=33
-
-curl localhost:8080/predictions2/
-
-
-curl --request PUT --data "id=6#ranking=5" http://localhost:8080/rankings2/
 
