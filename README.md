@@ -27,46 +27,54 @@ After the service has been deployed on your server, it is now available to be ac
 # Accessing the API
 
 Sample curl calls (These are also available in the curls.txt file):
-Base:
-```  curl localhost:8080/drpatient/resources/
+```
+curl localhost:8080/drpatient/resources/
 ```
 Defaults to listing doctors (xml & plain):
-```  curl localhost:8080/drpatient/resources/xml
-  curl localhost:8080/drpatient/resources/plain
+```
+curl localhost:8080/drpatient/resources/xml
+curl localhost:8080/drpatient/resources/plain
 ```
 List only patients:
-```  curl localhost:8080/drpatient/resources/p
-  curl localhost:8080/drpatient/resources/xml/p
+```
+curl localhost:8080/drpatient/resources/p
+curl localhost:8080/drpatient/resources/xml/p
 ```
 List individual doctor by ID (xml & plain):
-```  curl --request GET localhost:8080/drpatient/resources/xml/2
-  curl --request GET localhost:8080/drpatient/resources/plain/2
+```
+curl --request GET localhost:8080/drpatient/resources/xml/2
+curl --request GET localhost:8080/drpatient/resources/plain/2
 ```
 List individual patient by ID (xml & plain):
-```  curl --request GET localhost:8080/drpatient/resources/xml/p/2
-  curl --request GET localhost:8080/drpatient/resources/plain/p/2
+```
+curl --request GET localhost:8080/drpatient/resources/xml/p/2
+curl --request GET localhost:8080/drpatient/resources/plain/p/2
 ```
 Add/create new doctor and add patients
-```  curl --request POST --data "firstName=Gee&lastName=Pea" localhost:8080/drpatient/resources/create/
-  curl --request POST --data "firstName=Hai&lastName=Bludpresshar&insuranceNumber=XX698&doctorId=4" 
-	localhost:8080/drpatient/resources/createp/
-  curl --request POST --data "firstName=Hypoh&lastName=Kondriak&insuranceNumber=XX698&doctorId=4" 
-	localhost:8080/drpatient/resources/createp/
+```
+curl --request POST --data "firstName=Gee&lastName=Pea" localhost:8080/drpatient/resources/create/
+curl --request POST --data "firstName=Hai&lastName=Bludpresshar&insuranceNumber=XX698&doctorId=4" localhost:8080/drpatient/resources/createp/
+curl --request POST --data "firstName=Hypoh&lastName=Kondriak&insuranceNumber=XX698&doctorId=4" localhost:8080/drpatient/resources/createp/
 ```
 Update doctor's name on existing list (give id and new name):
-```  curl --request PUT --data "id=1&firstName=Peety" localhost:8080/drpatient/resources/update/
+```
+curl --request PUT --data "id=1&firstName=Peety" localhost:8080/drpatient/resources/update/
 ```
 Delete existing doctor without deleting patients on master list:
-```  curl --request DELETE localhost:8080/drpatient/resources/delete/2
+```
+curl --request DELETE localhost:8080/drpatient/resources/delete/2
 ```
 Delete a patient:
-```  curl --request DELETE localhost:8080/drpatient/resources/deletep/7
+```
+curl --request DELETE localhost:8080/drpatient/resources/deletep/7
 ```
 Delete existing doctor AND all patients on master list:
-```  curl --request DELETE localhost:8080/drpatient/resources/deleteAll/3
+```
+curl --request DELETE localhost:8080/drpatient/resources/deleteAll/3
 ```
 Update a patient to a different doctor:
- ``` curl --request PUT --data "id=5&doctorId=2" localhost:8080/drpatient/resources/updatep/
+```
+curl --request PUT --data "id=5&doctorId=2" localhost:8080/drpatient/resources/updatep/
 ```
 
 
